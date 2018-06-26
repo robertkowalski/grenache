@@ -18,21 +18,24 @@ One solution to solve the problem is create a manual routing table. The table ma
 In this diagram our ISP assigns the IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows or show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes the packet to `192.168.1.3`, port `3000`.
 
 
-Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UTP Holepunching”. With a UTP Holepunch, we let the router create the mapping.
+Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UTP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.
 
-## How UDP/UTP Holepunching works
+## How UDP Holepunching works
 
-With UTP Holepunching we let the router create the mentioned mapping for us. Many popular applications rely on it, its a feature used by many applications. Some of them are BitTorrent and voice chat clients.
+With UDP Holepunching we let the router create the mentioned mapping for us. Many popular applications rely on it, its a feature used more often than we think. Some examples are BitTorrent but also many voice chat and video chat clients.
 
 Imagine again our server at home with a service listening on `3000`. Now we send a UDP packet to another server on the internet, from exact the same internal IP and port (`192.168.1.3:3000`). Let's say the server on the internet has the IP `8.8.8.8` and accepts data on port `1337`. Our router will notice the outgoing packet and remember its destination. Our router will also assign a new external port when it sends the packet to the external destination. Let's pretend the router uses the port `24000`.  For the external server the UDP packet then comes from `111.111.111.111:24000`, but on our internal network we sent the packet from `192.168.1.3:3000`.
 
-Lets say our external target server now sends back a UDP packet within a short amount of time. Our router still remembers that we just sent out data from this port and that it was originating from `192.168.1.3:3000`. So it will route the packet to our local server, as a service for us. Now we have created a routing entry.
+Lets say our external target server now sends back a UDP packet within a short amount of time. Our router still remembers that we just sent out data from this port and that it was originating from `192.168.1.3:3000`. So it will route the packet to our local server, as a service for us. Now we have created a routing entry and the servers can connect to each other.
+
 
 ## UDP Holepunching with Grenache
 
-Grenache gives us great flexibility in creating microservice networks. Grenache uses the BitTorrent protocol for peer discovery.
+After taking a look at the problem let's see how we can solve it. At Bitfinex we use Grenache, a tiny library for creating distributed networks. Grenache uses the BitTorrent protocol for peer discovery and we recently added support for Holepunching.
 
-With a UDP Holepunch transport for Grenache its easy to connect services between different local networks to share data. A good example are IOT applications. A local server offers services that should be accessible from the public internet. The service could provide any data we want. We build a service inspired by the fibonacci number generating service we created some time ago in http://blog.bitfinex.com/tutorial/bitfinex-loves-microservices-grenache/. This time we will make it ready for NAT home routers. We will also extend the fibonacci calculation to return the sequence of numbers.
+The [UDP Holepunch transport for Grenache](https://github.com/bitfinexcom/grenache-nodejs-utp) makes it easy to connect services between different local networks to share data. A good example are IOT applications. A local server offers services that should be accessible from the public internet.
+
+In our example we build a service inspired by the fibonacci number generating service we created some time ago in http://blog.bitfinex.com/tutorial/bitfinex-loves-microservices-grenache/. This time we will make it ready for NAT home routers. We will also extend the fibonacci calculation to return the sequence of numbers.
 
 To start, we have to spin up our own local BitTorrent based network:
 

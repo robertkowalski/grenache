@@ -80,7 +80,7 @@ Now we have to make everything available on the network. Make sure you have all 
 
 ```
 npm i --save grenache-nodejs-link
-npm i https://github.com/bitfinexcom/grenache-nodejs-utp
+npm i --save https://github.com/bitfinexcom/grenache-nodejs-utp
 ```
 
 We require the RPC Server component and a component called `Link`:
@@ -109,6 +109,15 @@ const peer = new PeerRPCServer(link, {
 })
 peer.init()
 ```
+
+For the server to work, it has to listen on a port, we will get a free, randomly assigned port:
+
+```js
+const service = peer.transport('server')
+service.listen()
+console.log('listening on', service.port)
+```
+
 As a next step, we have to put our request handler into place. When a new request arrives, we want to calculate the fibonacci sequence and answer the request:
 
 ```js
@@ -117,14 +126,6 @@ service.on('request', (rid, key, payload, handler, cert, additional) => {
   const result = fibonacci(payload.length)
   handler.reply(null, result)
 })
-```
-
-For the server to work, it has to listen on a port, we will get a free, randomly assigned port:
-
-```js
-const service = peer.transport('server')
-service.listen()
-console.log('listening on', service.port)
 ```
 
 We now have to announce our fibonacci calculating service on the network. This happens by calling `link.announce`. We will also look for possible consumers of our service to start a UDP holepunch with them by calling `peer.punch`:

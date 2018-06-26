@@ -1,8 +1,8 @@
 # Connecting IOT Networks Behind a NAT with Grenache
 
-Some of you already know that the Bitfinex team is, like many things in crypto, highly distributed. Our architecture is distributed as well.
+Some of you already know that the Bitfinex team is, like many things in crypto, highly distributed. Our architecture is distributed as well, so we have to solve a lot of interesting problems every day.
 
-Today we want to take a look how we can connect to servers which are behind a NAT, e.g. a home router. This is a common case for IOT applications and a common problem for everyone who ever tried to run a server at home. In this article we take a look how UDP Holepunching works, and create two small server applications which can connect through a NAT.
+Today we want to take a look how you can connect to servers which are behind a NAT, e.g. a home router. This is a common case for IOT applications and a common problem for everyone who ever tried to run a server at home. In this article we take a look how UDP Holepunching works, and create two small server applications which can connect through a NAT.
 
 ## Routing with local networks
 
@@ -10,12 +10,12 @@ Most routers we use at home today still use NAT. They have a public IP and an in
 
 ![NAT router and the internet](./pic1.jpg)
 
-One solution to solve the problem is create a manual routing table. The table maps a port on our public IP address to an internal IP and port. This way our server becomes reachable from the public internet:
+One solution to solve the problem is to create a manual routing table. The table maps a port on our public IP address to an internal IP and port. This way our server becomes reachable from the public internet:
 
 ![NAT with mapped ports](./mapped-ports.jpg)
 
 
-In this diagram our ISP assigns the IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows or show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes the packet to `192.168.1.3`, port `3000`.
+In this diagram our ISP assigns the public IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes it to `192.168.1.3`, port `3000`.
 
 
 Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UDP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.

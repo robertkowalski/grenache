@@ -18,20 +18,20 @@ One solution to solve the problem is to create a manual routing table. The table
 In this diagram our ISP assigns the public IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes it to `192.168.1.3`, port `3000`.
 
 
-Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UDP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.
+Sometimes we can’t manually create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UDP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.
 
 ## How UDP Holepunching works
 
-With UDP Holepunching we let the router create the mentioned mapping for us. Many popular applications rely on it, its a feature used more often than we think. Some examples are BitTorrent but also many voice chat and video chat clients.
+With UDP Holepunching we let the router create the mentioned mapping for us. Many popular applications rely on it, its a feature used more often than we think. One example is  BitTorrent but also many voice chat and video chat clients make use of it.
 
 Imagine again our server at home with a service listening on `3000`. Now we send a UDP packet to another server on the internet, from exact the same internal IP and port (`192.168.1.3:3000`). Let's say the server on the internet has the IP `8.8.8.8` and accepts data on port `1337`. Our router will notice the outgoing packet and remember its destination. Our router will also assign a new external port when it sends the packet to the external destination. Let's pretend the router uses the port `24000`.  For the external server the UDP packet then comes from `111.111.111.111:24000`, but on our internal network we sent the packet from `192.168.1.3:3000`.
 
-Lets say our external target server now sends back a UDP packet within a short amount of time. Our router still remembers that we just sent out data from this port and that it was originating from `192.168.1.3:3000`. So it will route the packet to our local server, as a service for us. Now we have created a routing entry and the servers can connect to each other.
+Lets say our external target server now sends back a UDP packet within a short amount of time. Our router still remembers that we just sent out data to `8.8.8.8:1337` from this port and that it was originating from `192.168.1.3:3000`. So it will route the packet to our local server, as a service for us. Now we have created a routing entry and the servers can continue to send data to each other.
 
 
 ## UDP Holepunching with Grenache
 
-After taking a look at the problem let's see how we can solve it. At Bitfinex we use Grenache, a tiny library for creating distributed networks. Grenache uses the BitTorrent protocol for peer discovery and we recently added support for Holepunching.
+After taking a look at the problem and the theoretical solution, let's see how we can make use of it in daily life. At Bitfinex we use Grenache, a tiny library for creating distributed networks. Grenache uses the BitTorrent protocol for peer discovery and we recently added support for Holepunching.
 
 The [UDP Holepunch transport for Grenache](https://github.com/bitfinexcom/grenache-nodejs-utp) makes it easy to connect services between different local networks to share data. A good example are IOT applications. It's common in the IOT world that a local server offers services that should be accessible from the public internet.
 
@@ -46,7 +46,7 @@ grape --dp 20001 --aph 30001 --bn '127.0.0.1:20002'
 grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001'
 ```
 
-Easy, isn't it? We are running our own private, BitTorrent network now.
+Easy, isn't it? We are running our own and private BitTorrent network now.
 
 ### The fibonacci calculation service
 
@@ -54,9 +54,9 @@ Our project will have two parts. A calculation service, which will run in our NA
 
 Connecting RPC services where all parties are behind a NAT is possible, too. In this case we need an additional party. The additonal party helps with the exchange of the IPs and ports. In case you are interested in it, there is an example for a setup with broker in [the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker).
 
-For this article, we will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for Holepunching. For communication it uses UDP/UTP sockets.
+For this article, we will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us with helper methods for Holepunching. For communication it uses UDP/UTP sockets.
 
-Let's start with coding. Our calculation service will be located in a file called `rpc_server_behind_nat.js`. The heart of our service will be the calculation of the fibonacci sequence by length. When we pass in the maximum length as parameter, the function will return us the fibonacci number sequence of that length:
+Let's start with coding. Our calculation service will be located in a file called `rpc_server_behind_nat.js`. The heart of our service will be the calculation of the fibonacci sequence by length. When we pass in the maximum length as parameter, the function will return the fibonacci number sequence of that length:
 
 ```js
 function fibonacci (length) {
@@ -113,7 +113,7 @@ const peer = new PeerRPCServer(link, {
 peer.init()
 ```
 
-For the server to work, it has to listen on a port. By calling `listen` we will get a free, randomly assigned port:
+For the server to work, it has to listen on a port. By calling `listen` we let it listen on free, randomly assigned port:
 
 ```js
 const service = peer.transport('server')
@@ -131,7 +131,7 @@ service.on('request', (rid, key, payload, handler, cert, additional) => {
 })
 ```
 
-We now have to announce our fibonacci service on the Grenache network. This happens by calling `link.announce`. We will also look for possible consumers of our service. By calling `peer.punch` we search for consumers on the network to start a UDP Holepunch with them:
+We now have to announce our fibonacci service on the Grenache network. This happens by calling `link.announce`. We will also look for possible consumers of our service. By calling `peer.punch` we send consumers on the newtork a UDP packet to start a connection setup with them:
 
 ```js
 setInterval(function () {
@@ -147,7 +147,7 @@ The code for this section is also part of the examples on GitHub: [rpc_server_be
 
 ### The data consumer
 
-In the last section we created a calculation service. It runs within our own private BitTorrent network. The calculation service also looks up possible consumers. By sending UDP packets to them with the `punch` method it helps them to establish a connection. This way we can offer a service through our home router even behind a firewalled NAT.
+In the last section we created a calculation service. It runs within our own private BitTorrent network. The calculation service also looks up possible consumers. It uses the `punch` helper method to send UDP packets to them. The UDP packets will help the consumers to establish a connection. This way we can offer a service through our home router even behind a firewalled NAT.
 
 In this section we create a data consumer. For learning purposes the data consumer is not firewalled in this article. [However, there is an example in the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker) which implements a solution where both P2P parties can be firewalled.
 
@@ -188,7 +188,7 @@ const peer = new PeerRPCClient(link2, {})
 peer.init()
 ```
 
-In the data calculation service we were looking up data consumer on the network, to send them a UDP packet. Here we announce our consumer to the network, so it can be found by the calculation service.
+In the data calculation service we were looking up data consumers on the network, to send them a UDP packet. Here we announce our consumer to the network, so it can be found by the calculation service.
 
 ```js
 setInterval(function () {
@@ -281,7 +281,7 @@ node rpc_server_public.js
 
 Start `rpc_server_behind_nat.js` on your local machine behind the router now. It looks up possible consumers and sends a UDP packet to the consumer. This establishes a temporary ad-hoc routing for the service running in the home network.
 
-When the packet arrives at the public server, it will emit a `punch` event. The public server handles the event and gets the IP/port from the ad-hoc routing. It then kicks of the request for calculation, which is routed to the server inside the local network for us. When it gets an answer, it logs the received result.
+When the packet arrives at the public server, it will emit a `punch` event. The public server handles the event and gets the IP/port from the ad-hoc routing. It then kicks off the request for calculation, which is routed to the server inside the local network for us. When it gets an answer, it logs the received result.
 
 
 ### Conclusion

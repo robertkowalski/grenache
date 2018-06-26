@@ -18,7 +18,7 @@ One solution to solve the problem is create a manual routing table. The table ma
 In this diagram our ISP assigns the IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows or show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes the packet to `192.168.1.3`, port `3000`.
 
 
-Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UTP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.
+Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UDP Holepunching”. With a UDP Holepunch, we let the router create the mapping. In the next section, we will take a closer look at it.
 
 ## How UDP Holepunching works
 
@@ -33,7 +33,7 @@ Lets say our external target server now sends back a UDP packet within a short a
 
 After taking a look at the problem let's see how we can solve it. At Bitfinex we use Grenache, a tiny library for creating distributed networks. Grenache uses the BitTorrent protocol for peer discovery and we recently added support for Holepunching.
 
-The [UDP Holepunch transport for Grenache](https://github.com/bitfinexcom/grenache-nodejs-utp) makes it easy to connect services between different local networks to share data. A good example are IOT applications. A local server offers services that should be accessible from the public internet.
+The [UDP Holepunch transport for Grenache](https://github.com/bitfinexcom/grenache-nodejs-utp) makes it easy to connect services between different local networks to share data. A good example are IOT applications. It's common in the IOT world that a local server offers services that should be accessible from the public internet.
 
 In our example we build a service inspired by the fibonacci number generating service we created some time ago in http://blog.bitfinex.com/tutorial/bitfinex-loves-microservices-grenache/. This time we will make it ready for NAT home routers. We will also extend the fibonacci calculation to return the sequence of numbers.
 
@@ -52,9 +52,9 @@ Easy, isn't it? We are running our own private, BitTorrent network now.
 
 Our project will have two parts. A calculation service, which will run in our NAT at home. In the second part of the article we create a consumer, which needs to be located on a non-firewalled server. Later we will connect both with a UDP Holepunch.
 
-Connecting RPC services where all are behind a NAT is possible, too, we need a third party. The third party helps with the exchange of the IPs and ports. In case you are interested in the broker, there is an example for a setup with broker in [the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker).
+Connecting RPC services where all parties are behind a NAT is possible, too. In this case we need an additional party. The additonal party helps with the exchange of the IPs and ports. In case you are interested in it, there is an example for a setup with broker in [the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker).
 
-We will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for Holepunching. For communication it uses UDP/UTP sockets.
+For this article, we will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for Holepunching. For communication it uses UDP/UTP sockets.
 
 Let's start with coding. Our calculation service will be located in a file called `rpc_server_behind_nat.js`. The heart of our service will be the calculation of the fibonacci sequence by length. When we pass in the maximum length as parameter, the function will return us the fibonacci number sequence of that length:
 
@@ -95,7 +95,7 @@ const Link = require('grenache-nodejs-link')
 
 The link will connect to our private BitTorrent network. It will help us with advertising our service to other parties. Later in this article we will use the link for looking up services.
 
-We connect to the small private network we set up with the two `grape` CLI tools:
+The following code will connect to the small private network we set up with the two Grape command line tools:
 
 ```js
 const link = new Link({
@@ -104,7 +104,7 @@ const link = new Link({
 link.start()
 ```
 
-Then we inject the link into our server component, so the server can use the connection we just set up:
+Then we inject the link into our server component, so the server can use the connection:
 
 ```js
 const peer = new PeerRPCServer(link, {
@@ -113,7 +113,7 @@ const peer = new PeerRPCServer(link, {
 peer.init()
 ```
 
-For the server to work, it has to listen on a port, we will get a free, randomly assigned port:
+For the server to work, it has to listen on a port. By calling `listen` we will get a free, randomly assigned port:
 
 ```js
 const service = peer.transport('server')
@@ -131,7 +131,7 @@ service.on('request', (rid, key, payload, handler, cert, additional) => {
 })
 ```
 
-We now have to announce our fibonacci calculating service on the network. This happens by calling `link.announce`. We will also look for possible consumers of our service to start a UDP holepunch with them by calling `peer.punch`:
+We now have to announce our fibonacci service on the Grenache network. This happens by calling `link.announce`. We will also look for possible consumers of our service. By calling `peer.punch` we search for consumers on the network to start a UDP Holepunch with them:
 
 ```js
 setInterval(function () {
@@ -140,6 +140,8 @@ setInterval(function () {
 }, 1000)
 ```
 
+That's already it! A small server connected to a private BitTorrent network in 44 lines of code.
+
 The code for this section is also part of the examples on GitHub: [rpc_server_behind_nat.js](https://github.com/bitfinexcom/grenache-nodejs-utp/blob/fa16176ac1926c797289b8aed0e5e6cc19fd474a/examples/punch_simple_servers/rpc_server_behind_nat.js)
 
 
@@ -147,7 +149,7 @@ The code for this section is also part of the examples on GitHub: [rpc_server_be
 
 In the last section we created a calculation service. It runs within our own private BitTorrent network. The calculation service also looks up possible consumers. By sending UDP packets to them with the `punch` method it helps them to establish a connection. This way we can offer a service through our home router even behind a firewalled NAT.
 
-In this section we create a data consumer. The data consumer is not firewalled in this example. [This example in the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker) implements a solution where both P2P parties can be firewalled.
+In this section we create a data consumer. For learning purposes the data consumer is not firewalled in this article. [However, there is an example in the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker) which implements a solution where both P2P parties can be firewalled.
 
 For the data consumer we require both the RPC client and server. We put the code into a file called `rpc_server_public.js`:
 
@@ -174,7 +176,7 @@ service.listen()
 console.log('listening on', service.port)
 ```
 
-We are going to use the RPC client, we have to start it too:
+We are going to use the RPC client, too. We have to start it:
 
 ```js
 const link2 = new Link({
@@ -194,11 +196,11 @@ setInterval(function () {
 }, 1000)
 ```
 
-The other service calls `.punch('fibonacci_consumer')` every second. This looks up a fibonacci consumer on the network, and sends a UDP packet to the IP and port of the consumer.
+You probably remember that the other service calls `.punch('fibonacci_consumer')` every second. This looks up an announced fibonacci consumer on the network, and sends a UDP packet to the IP and port of the consumer.
 
-In our code here we listen for those packets. With the UDP packet that we receive as part of the punch event, we get the public IP and port of the sender.
+In the next code section we will listen for those packets. With the UDP packet that we receive as part of the punch event, we get the public IP and port of the sender.
 
-When we now send network data to this address, the home router routes it to the service running on the local network. This way we can set up an ad-hoc, P2P data connection with a server behind a NAT.
+When we now send network data to the received address and IP, the home router routes it to the service running on the local network. This way we can set up an ad-hoc, P2P data connection with a server behind a NAT.
 
 ```js
 service.on('punch', (other) => {
@@ -217,20 +219,20 @@ service.on('punch', (other) => {
 
 ```
 
-Thats all we need for the consumer. Time to connect the different parts! By the way: the code for the consumer is on GitHub, too: The code for this section is also part of the examples on GitHub: [rpc_server_public.js](https://github.com/bitfinexcom/grenache-nodejs-utp/blob/fa16176ac1926c797289b8aed0e5e6cc19fd474a/examples/punch_simple_servers/rpc_server_public.js)
+That's all we need for the consumer. Time to connect the different parts! By the way: the code for the consumer is on GitHub, too. You can find it as part of the examples on GitHub: [rpc_server_public.js](https://github.com/bitfinexcom/grenache-nodejs-utp/blob/fa16176ac1926c797289b8aed0e5e6cc19fd474a/examples/punch_simple_servers/rpc_server_public.js)
 
 ### Testing
 
 After we have created our two services, we can run them on our local machine to see if they connect. With the two local grape instances running, we first run the `rpc_server_public.js`:
 
 ```
-node rpc_server_public.js
+$ node rpc_server_public.js
 ```
 
 Then we boot the consumer:
 
 ```
-node rpc_server_public.js
+$ node rpc_server_public.js
 ```
 
 If everything worked well, we get this output:
@@ -246,15 +248,20 @@ got data reply, sequence is:
 ```
 
 ```
-node rpc_server_behind_nat.js
+$ node rpc_server_behind_nat.js
+
 listening on 52217
 punch from { address: '127.0.0.1', family: 'IPv4', port: 51563, size: 2 }
 received request, calculating & replying...
 ```
 
-If everything works, we can stop the both servers and local Grape instances. We can now start the calculation service behind the NAT and connect from the external consumer to it. For this lets assume our public server has the IP `157.81.109.241`.
+If everything works, we can stop the both servers and local Grape instances. In the next section we will connect from an external server into a NAT.
 
-We start a Grape instance on the public server:
+### Usage behind NAT
+
+We can now start the calculation service behind the NAT and connect from the external consumer to it. For this lets assume your public server has the IP `157.81.109.241`.
+
+Start a Grape instance on the public server:
 
 ```
 DEBUG=* grape --dp 20001 --aph 30001 --bn '127.0.0.1:20002'
@@ -274,9 +281,9 @@ node rpc_server_public.js
 
 Start `rpc_server_behind_nat.js` on your local machine behind the router now. It looks up possible consumers and sends a UDP packet to the consumer. This establishes a temporary ad-hoc routing for the service running in the home network.
 
-When the packet arrives at the public server, it will emit a `punch` event. The public server handles the event and gets the IP/port from the ad-hoc routing. It then kicks of the request for calculation and logs the received result.
+When the packet arrives at the public server, it will emit a `punch` event. The public server handles the event and gets the IP/port from the ad-hoc routing. It then kicks of the request for calculation, which is routed to the server inside the local network for us. When it gets an answer, it logs the received result.
 
 
-### UDP Holepunching
+### Conclusion
 
-In this article we showed the basics of UDP Holepunching. We created a data producer, a small consumer. The example works without an extra registry as connection helper. We hope we inspired you, and it is helpful for your own projects. We use Grenache in production at Bitfinex. If you are interested in distributed systems and very good in JavaScript, we are hiring: https://www.bitfinex.com/careers/senior_software_developer
+In this article we showed the basics of UDP Holepunching. We created a data producer and a small consumer. The example works without an extra registry as connection helper. There are more complex use cases possible, where both consumer and producer are behind a NAT. We hope we were able to inspire you, and this knowledge is helpful for your own projects. We use Grenache in production at Bitfinex. If you are interested in distributed systems and very good in JavaScript, we are hiring: https://www.bitfinex.com/careers/senior_software_developer

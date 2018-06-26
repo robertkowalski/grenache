@@ -1,6 +1,6 @@
 # Connecting IOT Networks Behind a NAT with Grenache
 
-Some of you already know that the Bitfinex team is, like many things in crypto, highly distributed. Our architecture is distributed as well. Our microservices push the Bittorrent protocol to its limits.
+Some of you already know that the Bitfinex team is, like many things in crypto, highly distributed. Our architecture is distributed as well.
 
 Today we want to take a look how we can connect to servers which are behind a NAT, e.g. a home router. This is a common case for IOT applications and a common problem for everyone who ever tried to run a server at home. In this article we take a look how UDP Holepunching works, and create two small server applications which can connect through a NAT.
 

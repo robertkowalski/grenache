@@ -49,7 +49,7 @@ Easy, isn't it? We are running our own private, BitTorrent network now.
 
 Our project will have two parts. A calculation service, which will run in our NAT at home. In the second part of the article we create a consumer, which needs to be located on a non-firewalled server. Later we will connect both with a UDP Holepunch.
 
-Connecting RPC services where all are behind a NAT is possible, too, we need a third party. The third party helps with the exchange of the IPs and ports. In case you are interested in the broker, there is an example for a setup with broker at BROKER_EXAMPLE.
+Connecting RPC services where all are behind a NAT is possible, too, we need a third party. The third party helps with the exchange of the IPs and ports. In case you are interested in the broker, there is an example for a setup with broker in [the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker).
 
 We will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for holepunching. For communication it uses UDP/UTP sockets.
 
@@ -79,7 +79,8 @@ When we now call `fibonacci(10)`, we receive `[1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 Now we have to make everything available on the network. Make sure you have all required dependencies installed:
 
 ```
-npm i --save grenache-nodejs-utp grenache-nodejs-link
+npm i --save grenache-nodejs-link
+npm i https://github.com/bitfinexcom/grenache-nodejs-utp
 ```
 
 We require the RPC Server component and a component called `Link`:
@@ -135,19 +136,19 @@ setInterval(function () {
 }, 1000)
 ```
 
-FULL CODE LINK ---  _behind_nat.js
+The code for this section is also part of the examples on GitHub: [rpc_server_behind_nat.js](https://github.com/bitfinexcom/grenache-nodejs-utp/blob/fa16176ac1926c797289b8aed0e5e6cc19fd474a/examples/punch_simple_servers/rpc_server_behind_nat.js)
 
 
 ### The data consumer
 
 In the last section we created a calculation service. It runs within our own private BitTorrent network. The calculation service also looks up possible consumers. By sending UDP packets to them with the `punch` method it helps them to establish a connection. This way we can offer a service through our home router even behind a firewalled NAT.
 
-In this section we create a data consumer. The data consumer is not firewalled in this example. EXAMPLE LINK BROKER implements a solution where both P2P parties can be firewalled.
+In this section we create a data consumer. The data consumer is not firewalled in this example. [This example in the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker) implements a solution where both P2P parties can be firewalled.
 
 For the data consumer we require both the RPC client and server. We put the code into a file called `rpc_server_public.js`:
 
 ```js
-const { PeerRPCServer, PeerRPCClient } = require('./../../')
+const { PeerRPCServer, PeerRPCClient } = require('grenache-nodejs-utp')
 const Link = require('grenache-nodejs-link')
 ```
 
@@ -212,7 +213,7 @@ service.on('punch', (other) => {
 
 ```
 
-Thats all we need for the consumer. Time to connect the different parts!
+Thats all we need for the consumer. Time to connect the different parts! By the way: the code for the consumer is on GitHub, too: The code for this section is also part of the examples on GitHub: [rpc_server_public.js](https://github.com/bitfinexcom/grenache-nodejs-utp/blob/fa16176ac1926c797289b8aed0e5e6cc19fd474a/examples/punch_simple_servers/rpc_server_public.js)
 
 ### Testing
 
@@ -274,4 +275,4 @@ When the packet arrives at the public server, it will emit a `punch` event. The 
 
 ### UDP holepunching
 
-In this article we showed the basics of UDP Holepunching. We created a data producer, a small consumer. The example works without an extra registry as connection helper. We hope we inspired you, and it is helpful for your own projects. We use Grenache in production at Bitfinex. If you are interested in distributed systems and very good in JavaScript, we are hiring: HIRE_PAGE_LINK
+In this article we showed the basics of UDP Holepunching. We created a data producer, a small consumer. The example works without an extra registry as connection helper. We hope we inspired you, and it is helpful for your own projects. We use Grenache in production at Bitfinex. If you are interested in distributed systems and very good in JavaScript, we are hiring: https://www.bitfinex.com/careers/senior_software_developer

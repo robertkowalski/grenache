@@ -1,0 +1,15 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "grenache-nodejs-link": "^0.7.9",
+    "grenache-nodejs-utp": "git+https://github.com/bitfinexcom/grenache-nodejs-utp.git"
+  }
+}

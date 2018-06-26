@@ -2,7 +2,7 @@
 
 Some of you already know that the Bitfinex team is, like many things in crypto, highly distributed. Our architecture is distributed as well. Our microservices push the Bittorrent protocol to its limits.
 
-Today we want to take a look how we can connect IOT applications between different NAT based local networks. We will solve a problem many who tried to run a server at home have run into. We will take a look how UDP Holepunching works, and create a small demo application with Grenache.
+Today we want to take a look how we can connect to servers which are behind a NAT, e.g. a home router. This is a common case for IOT applications and a common problem for everyone who ever tried to run a server at home. In this article we take a look how UDP Holepunching works, and create two small server applications which can connect through a NAT.
 
 ## Routing with local networks
 
@@ -15,7 +15,7 @@ One solution to solve the problem is create a manual routing table. The table ma
 ![NAT with mapped ports](./mapped-ports.jpg)
 
 
-In this diagram our ISP assigns the IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small network a server is running with the IP `192.168.1.3`. The two arrows or show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes the packet to `192.168.1.3`, port `3000`.
+In this diagram our ISP assigns the IP `111.111.111.111` to us. If someone connects to this IP, the request will arrive at our router. In our small local network a server is running with the IP `192.168.1.3`. The two arrows or show a routing we set up, the port `3000` on our server is mapped to the port `1800`. When a request arrives at our public IP `111.111.111.111` on port `1800`, the router routes the packet to `192.168.1.3`, port `3000`.
 
 
 Sometimes we can’t create or maintain a routing table for technical or practical reasons. In those cases, we can use a practice called “UTP Holepunching”. With a UTP Holepunch, we let the router create the mapping.
@@ -51,7 +51,7 @@ Our project will have two parts. A calculation service, which will run in our NA
 
 Connecting RPC services where all are behind a NAT is possible, too, we need a third party. The third party helps with the exchange of the IPs and ports. In case you are interested in the broker, there is an example for a setup with broker in [the Grenache UTP repository](https://github.com/bitfinexcom/grenache-nodejs-utp/tree/master/examples/nat_w_broker).
 
-We will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for holepunching. For communication it uses UDP/UTP sockets.
+We will use `grenache-nodejs-utp` instead of the HTTP or WebSocket transport used in other articles. It will provide us helper methods for Holepunching. For communication it uses UDP/UTP sockets.
 
 Let's start with coding. Our calculation service will be located in a file called `rpc_server_behind_nat.js`. The heart of our service will be the calculation of the fibonacci sequence by length. When we pass in the maximum length as parameter, the function will return us the fibonacci number sequence of that length:
 
@@ -274,6 +274,6 @@ Start `rpc_server_behind_nat.js` on your local machine behind the router now. It
 When the packet arrives at the public server, it will emit a `punch` event. The public server handles the event and gets the IP/port from the ad-hoc routing. It then kicks of the request for calculation and logs the received result.
 
 
-### UDP holepunching
+### UDP Holepunching
 
 In this article we showed the basics of UDP Holepunching. We created a data producer, a small consumer. The example works without an extra registry as connection helper. We hope we inspired you, and it is helpful for your own projects. We use Grenache in production at Bitfinex. If you are interested in distributed systems and very good in JavaScript, we are hiring: https://www.bitfinex.com/careers/senior_software_developer
